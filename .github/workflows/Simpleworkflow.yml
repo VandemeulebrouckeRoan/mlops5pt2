@@ -1,36 +1,40 @@
-name: Build & Push Docker Image
+name: CI
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  build-and-push:
+  build:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
+      - name: Check out code
         uses: actions/checkout@v4
 
-      # Login to GitHub Container Registry (Windows PowerShell version)
-      - name: Login to GitHub Container Registry
-        run: echo $env:GITHUB_TOKEN | docker login ghcr.io -u $env:GITHUB_ACTOR --password-stdin
+      - name: Log in to GitHub Container Registry
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CR_PAT: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          Write-Host "Logging in as $env:GITHUB_ACTOR"
+          docker login ghcr.io -u $env:GITHUB_ACTOR -p $env:CR_PAT
 
-      # Build image
-      - name: Build Docker image
-        run: docker build -t ghcr.io/VandemeulebrouckeRoan/hello-world-nginx:latest .
+      - name: Build and tag Docker image
+        run: |
+          $SHORT_SHA = $env:GITHUB_SHA.Substring(0,7)
+          $REPO_LOWER = $env:GITHUB_REPOSITORY.ToLower()
+          $IMAGE = "ghcr.io/$REPO_LOWER/hello-world-nginx"
+          # Use subexpression $() for safe expansion when concatenating with a colon
+          docker build -t "$($IMAGE):$($env:GITHUB_REF_NAME)" -t "$($IMAGE):$($SHORT_SHA)" .
 
-      # Tag additional version with branch + commit SHA
-      - name: Tag with branch + SHA
-        run: docker tag ghcr.io/vandemeulebrouckeroan/hello-world-nginx:latest ghcr.io/vandemeulebrouckeroan/hello-world-nginx:${{ github.ref_name }}-${{ github.sha }}
-
-      # Push latest
-      - name: Push latest
-        run: docker push ghcr.io/vandemeulebrouckeroan/hello-world-nginx:latest
-
-      # Push branch+SHA tag
-      - name: Push branch+SHA
-        run: docker push ghcr.io/vandemeulebrouckeroan/hello-world-nginx:${{ github.ref_name }}-${{ github.sha }}
+      - name: Push images to GHCR
+        run: |
+          $SHORT_SHA = $env:GITHUB_SHA.Substring(0,7)
+          $REPO_LOWER = $env:GITHUB_REPOSITORY.ToLower()
+          $IMAGE = "ghcr.io/$REPO_LOWER/hello-world-nginx"
+          # Use subexpression $() for safe expansion when concatenating with a colon
+          docker push "$($IMAGE):$($env:GITHUB_REF_NAME)"
+          docker push "$($IMAGE):$($SHORT_SHA)"
