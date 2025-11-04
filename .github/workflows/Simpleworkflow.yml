@@ -34,3 +34,13 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
+
+
+      # Added a Docker build step
+      - name: Build Docker image
+        run: docker build -t hello-world-nginx:v1 .
+      
+      # Added a Docker run step
+      - name: Run Docker container
+        run: docker run -d -p 8080:80 hello-world-nginx:v1
+
