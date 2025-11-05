@@ -5,14 +5,14 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Windows, X64]
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Apply Pod to Kubernetes
         run: kubectl apply -f k8s/hello-pod.yaml
 
-      - name: Verify Pods
+      - name: Check pods
         run: kubectl get pods -o wide
