@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: hello-k8s
+spec:
+  containers:
+  - name: hello
+    image: rancher/hello-world
