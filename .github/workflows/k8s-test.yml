@@ -5,23 +5,21 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Windows, X64]
+    runs-on: self-hosted
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v3
 
-      # Generate random pod ID
-      - name: Generate random ID
-        id: random
-        run: |
-          echo "ID=%RANDOM%" >> $env:GITHUB_ENV
+    - name: Generate random ID
+      shell: pwsh
+      run: echo "ID=$(Get-Random -Maximum 99999)" >> $env:GITHUB_ENV
 
-      # Replace {ID} in YAML and apply
-      - name: Apply Pod to Kubernetes
-        run: |
-          (Get-Content k8s/hello-pod.yaml).Replace("{ID}", "$env:ID") | Set-Content k8s/hello-pod-gen.yaml
-          kubectl apply -f k8s/hello-pod-gen.yaml
+    - name: Apply Pod to Kubernetes
+      shell: pwsh
+      run: |
+        (Get-Content k8s/hello-pod.yaml).Replace("{ID}", "$env:ID") | Set-Content k8s/hello-pod-gen.yaml
+        kubectl apply -f k8s/hello-pod-gen.yaml
 
-      - name: Check pods
-        run: kubectl get pods -o wide
+    - name: Check pods
+      run: kubectl get pods
