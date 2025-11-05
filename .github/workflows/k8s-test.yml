@@ -11,8 +11,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Generate random pod ID
+      - name: Generate random ID
+        id: random
+        run: |
+          echo "ID=%RANDOM%" >> $env:GITHUB_ENV
+
+      # Replace {ID} in YAML and apply
       - name: Apply Pod to Kubernetes
-        run: kubectl apply -f k8s/hello-pod.yaml
+        run: |
+          (Get-Content k8s/hello-pod.yaml).Replace("{ID}", "$env:ID") | Set-Content k8s/hello-pod-gen.yaml
+          kubectl apply -f k8s/hello-pod-gen.yaml
 
       - name: Check pods
         run: kubectl get pods -o wide
