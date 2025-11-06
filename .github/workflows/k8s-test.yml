@@ -1,5 +1,4 @@
 name: Kubernetes Pod Test
-
 on:
   workflow_dispatch:
 
@@ -8,18 +7,26 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Generate random ID
-      shell: pwsh
-      run: echo "ID=$(Get-Random -Maximum 99999)" >> $env:GITHUB_ENV
+      # Generate a random ID and export it to the job env
+      - name: Generate random ID
+        shell: powershell
+        run: |
+          $id = Get-Random -Maximum 99999
+          "ID=$id" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Host "Generated ID: $id"
 
-    - name: Apply Pod to Kubernetes
-      shell: pwsh
-      run: |
-        (Get-Content k8s/hello-pod.yaml).Replace("{ID}", "$env:ID") | Set-Content k8s/hello-pod-gen.yaml
-        kubectl apply -f k8s/hello-pod-gen.yaml
+      # Replace {ID} in the YAML and apply to the cluster
+      - name: Apply Pod to Kubernetes
+        shell: powershell
+        run: |
+          $yaml = Get-Content -Raw k8s/hello-pod.yaml
+          $yaml = $yaml.Replace("{ID}", $env:ID)
+          $yaml | Set-Content k8s/hello-pod-gen.yaml -Encoding utf8
+          kubectl apply -f k8s/hello-pod-gen.yaml
 
-    - name: Check pods
-      run: kubectl get pods
+      - name: Check pods
+        shell: powershell
+        run: kubectl get pods -o wide
